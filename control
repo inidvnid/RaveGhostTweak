@@ -1,0 +1,9 @@
+Package: com.yourname.raveghost
+Name: RaveGhost
+Depends: mobilesubstrate
+Version: 0.0.1
+Architecture: iphoneos-arm
+Description: Ghost mode for Rave app
+Maintainer: YourName
+Author: YourName
+Section: Tweaks
