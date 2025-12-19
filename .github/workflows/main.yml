@@ -8,24 +8,28 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Theos
+      - name: Install Theos
         run: |
           bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
           echo "THEOS=~/theos" >> $GITHUB_ENV
 
-      - name: Build Tweak
+      - name: Setup SDK
+        run: |
+          mkdir -p ~/theos/sdks
+          curl -L https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz -o sdk.tar.xz
+          tar -xf sdk.tar.xz -C ~/theos/sdks
+          # هذا السطر مهم جداً للتأكد من أن المسار صحيح
+          ls -l ~/theos/sdks 
+
+      - name: Build Package
         run: |
           export THEOS=~/theos
-          # تحميل مكتبة iOS 14.5 بشكل مباشر ومضمون
-          curl -L https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz -o sdk.tar.xz
-          mkdir -p $THEOS/sdks
-          tar -xf sdk.tar.xz -C $THEOS/sdks
-          
-          # أمر البناء مع تنظيف شامل
-          make package FINALPACKAGE=1 ALWAYS_CLEAN=1
+          # تنفيذ بناء نظيف تماماً
+          make clean
+          make package FINALPACKAGE=1
           
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: RaveGhost_Success_File
+          name: RaveGhost_Final_DEB
           path: packages/*.deb
