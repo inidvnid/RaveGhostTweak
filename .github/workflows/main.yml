@@ -3,7 +3,7 @@ on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: macos-14
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -13,21 +13,19 @@ jobs:
           bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
           echo "THEOS=~/theos" >> $GITHUB_ENV
 
-      - name: Download SDK
-        run: |
-          mkdir -p ~/theos/sdks
-          curl -L https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz -o sdk.tar.xz
-          tar -xf sdk.tar.xz -C ~/theos/sdks
-          rm sdk.tar.xz
-
       - name: Build Tweak
         run: |
           export THEOS=~/theos
-          make clean
-          make package
+          # تحميل SDK مضغوط وسريع
+          curl -L https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz -o sdk.tar.xz
+          mkdir -p $THEOS/sdks
+          tar -xf sdk.tar.xz -C $THEOS/sdks
           
-      - name: Upload result
+          # البدء بالبناء مع تجاهل التحذيرات
+          make package FINALPACKAGE=1 ALWAYS_CLEAN=1
+          
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: RaveGhost_Tweak
+          name: RaveGhost_Final_Success
           path: packages/*.deb
