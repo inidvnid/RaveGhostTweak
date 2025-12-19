@@ -1,9 +1,9 @@
-name: Build Rave Ghost
+name: Build Rave Ghost M4
 on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: macos-13
+    runs-on: macos-15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -13,16 +13,19 @@ jobs:
           bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
           echo "THEOS=~/theos" >> $GITHUB_ENV
 
-      - name: Build Package
+      - name: Build Tweak
         run: |
           export THEOS=~/theos
+          # تحميل SDK مباشرة من المستودع الرسمي
           curl -L https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz -o sdk.tar.xz
           mkdir -p $THEOS/sdks
           tar -xf sdk.tar.xz -C $THEOS/sdks
-          make package FINALPACKAGE=1
+          
+          # أمر البناء المخصص لمعالجات Apple Silicon
+          make package FINALPACKAGE=1 ARCHS="arm64 arm64e"
           
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: RaveGhost_Final
+          name: RaveGhost_M4_Final
           path: packages/*.deb
