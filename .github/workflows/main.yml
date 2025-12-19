@@ -8,23 +8,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Theos
+      - name: Setup Environment
         run: |
-          bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
+          # تحميل Theos مصغر مباشرة
+          git clone --recursive https://github.com/theos/theos.git ~/theos
+          curl -L https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz -o sdk.tar.xz
+          mkdir -p ~/theos/sdks
+          tar -xf sdk.tar.xz -C ~/theos/sdks
           echo "THEOS=~/theos" >> $GITHUB_ENV
 
-      - name: Setup SDK & Build
+      - name: Hard Build
         run: |
           export THEOS=~/theos
-          # تحميل الـ SDK مباشرة داخل مجلد العمل
-          curl -L https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz -o sdk.tar.xz
-          mkdir -p $THEOS/sdks
-          tar -xf sdk.tar.xz -C $THEOS/sdks
-          rm sdk.tar.xz
-          
-          # إجبار البناء على استخدام المعمارية الصحيحة لـ M4
-          make clean
-          make package FINALPACKAGE=1 ARCHS="arm64 arm64e" TARGET="iphone:clang:latest:14.5"
+          # إجبار النظام على استخدام المترجم الداخلي لـ macOS 14
+          make package FINALPACKAGE=1 ARCHS="arm64 arm64e"
           
       - name: Upload
         uses: actions/upload-artifact@v4
