@@ -1,4 +1,4 @@
-name: Build Rave Ghost
+name: Build Rave Ghost M4
 on: [push, pull_request]
 
 jobs:
@@ -8,28 +8,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Theos
+      - name: Setup Theos
         run: |
           bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
           echo "THEOS=~/theos" >> $GITHUB_ENV
 
-      - name: Setup SDK
-        run: |
-          mkdir -p ~/theos/sdks
-          curl -L https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz -o sdk.tar.xz
-          tar -xf sdk.tar.xz -C ~/theos/sdks
-          # هذا السطر مهم جداً للتأكد من أن المسار صحيح
-          ls -l ~/theos/sdks 
-
-      - name: Build Package
+      - name: Build Tweak
         run: |
           export THEOS=~/theos
-          # تنفيذ بناء نظيف تماماً
-          make clean
-          make package FINALPACKAGE=1
+          curl -L https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz -o sdk.tar.xz
+          mkdir -p $THEOS/sdks
+          tar -xf sdk.tar.xz -C $THEOS/sdks
+          make package
           
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: RaveGhost_Final_DEB
+          name: RaveGhost_M4_Ready
           path: packages/*.deb
