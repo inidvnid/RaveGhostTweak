@@ -1,50 +1,28 @@
-name: Build Rave Ghost M4 FINAL
+name: Build Rave Ghost
 on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: macos-13
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Theos
         run: |
-          # تحميل الثيوس مباشرة
-          git clone --recursive https://github.com/theos/theos.git ~/theos
+          bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
           echo "THEOS=~/theos" >> $GITHUB_ENV
 
-      - name: Build Tweak (The Fail-Safe Way)
+      - name: Build Package
         run: |
           export THEOS=~/theos
-          # تحميل SDK من مصدر بديل وسريع جداً
-          curl -L "https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz" -o sdk.tar.xz
+          curl -L https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz -o sdk.tar.xz
           mkdir -p $THEOS/sdks
           tar -xf sdk.tar.xz -C $THEOS/sdks
-
-          # إنشاء ملفات المشروع برمجياً للتأكد من خلوها من الأخطاء
-          cat <<EOF > Makefile
-          ARCHS = arm64 arm64e
-          TARGET := iphone:clang:latest:14.0
-          include \$(THEOS)/makefiles/common.mk
-          TWEAK_NAME = RaveGhost
-          RaveGhost_FILES = Tweak.x
-          RaveGhost_CFLAGS = -fobjc-arc
-          include \$(THEOS)/makefiles/tweak.mk
-          EOF
-
-          cat <<EOF > Tweak.x
-          #import <UIKit/UIKit.h>
-          %hook RavePlayerController
-          - (bool)isGhostModeEnabled { return YES; }
-          %end
-          EOF
-
-          # أمر البناء المباشر
           make package FINALPACKAGE=1
           
-      - name: Upload Result
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: RaveGhost_M4_Final_File
+          name: RaveGhost_Final
           path: packages/*.deb
