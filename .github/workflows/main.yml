@@ -8,25 +8,23 @@ jobs:
       - name: Checkout project
         uses: actions/checkout@v4
 
-      - name: Pre-Setup (Fix Error 8)
+      - name: Setup Theos and SDK
         run: |
-          # تحميل الملفات مباشرة بدون تثبيت النظام
-          git clone --recursive https://github.com/theos/theos.git $GITHUB_WORKSPACE/theos
+          git clone --recursive https://github.com/theos/theos.git ~/theos
           curl -L https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz -o sdk.tar.xz
-          mkdir -p $GITHUB_WORKSPACE/theos/sdks
-          tar -xf sdk.tar.xz -C $GITHUB_WORKSPACE/theos/sdks
-          echo "THEOS=$GITHUB_WORKSPACE/theos" >> $GITHUB_ENV
+          mkdir -p ~/theos/sdks
+          tar -xf sdk.tar.xz -C ~/theos/sdks
+          echo "THEOS=~/theos" >> $GITHUB_ENV
 
-      - name: Compile for M4
+      - name: Emergency Build
         run: |
-          export THEOS=$GITHUB_WORKSPACE/theos
-          # بناء مباشر مع تحديد المسار يدوياً
-          $THEOS/bin/nic.pl --lib
-          make package FINALPACKAGE=1 ARCHS="arm64 arm64e"
+          export THEOS=~/theos
+          # هذا السطر يمسح أي إعدادات قديمة ويبدأ بناءً نظيفاً
+          rm -rf packages/*
+          make package FINALPACKAGE=1 ARCHS="arm64 arm64e" TARGET="iphone:clang:latest:14.5"
           
-      - name: Deliver Result
+      - name: Upload Result
         uses: actions/upload-artifact@v4
         with:
           name: RaveGhost_M4_Final
           path: packages/*.deb
-
