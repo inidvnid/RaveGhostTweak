@@ -2,6 +2,6 @@
 
 %hook RavePlayerController
 - (bool)isGhostModeEnabled {
-    return true;
+    return YES;
 }
 %end
