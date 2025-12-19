@@ -1,5 +1,5 @@
-TARGET := iphone:clang:latest:14.5
-INSTALL_TARGET_PROCESSES = Rave
+ARCHS = arm64 arm64e
+TARGET := iphone:clang:latest:15.0
 
 include $(THEOS)/makefiles/common.mk
 
