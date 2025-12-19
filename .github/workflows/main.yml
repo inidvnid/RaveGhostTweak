@@ -1,27 +1,26 @@
-name: Build Rave Tweak
+name: Build Rave Ghost
 on: [push, pull_request]
 
 jobs:
   build:
     runs-on: macos-latest
     steps:
-      - name: Checkout Code
+      - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Setup Theos Environment
+      - name: Setup Theos
         run: |
           bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
           echo "THEOS=~/theos" >> $GITHUB_ENV
 
-      - name: Build Tweak File
+      - name: Build
         run: |
           export THEOS=~/theos
           make package FINALPACKAGE=1
           
-      - name: Export dylib and deb
+      - name: Save Result
         uses: actions/upload-artifact@v3
         with:
-          name: RaveGhost_Output
-          path: |
-            packages/*.deb
-            .theos/obj/debug/*.dylib
+          name: RaveGhost_Files
+          path: packages/*.deb
+
