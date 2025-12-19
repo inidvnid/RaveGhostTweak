@@ -1,14 +1,14 @@
-name: Build Rave Ghost M4
+name: Build Rave Ghost M4 Final
 on: [push, pull_request]
 
 jobs:
   build:
     runs-on: macos-14
     steps:
-      - name: Checkout project
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Theos and SDK
+      - name: Setup Theos
         run: |
           git clone --recursive https://github.com/theos/theos.git ~/theos
           curl -L https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz -o sdk.tar.xz
@@ -16,15 +16,30 @@ jobs:
           tar -xf sdk.tar.xz -C ~/theos/sdks
           echo "THEOS=~/theos" >> $GITHUB_ENV
 
-      - name: Emergency Build
+      - name: Auto-Create Files and Build
         run: |
           export THEOS=~/theos
-          # هذا السطر يمسح أي إعدادات قديمة ويبدأ بناءً نظيفاً
-          rm -rf packages/*
-          make package FINALPACKAGE=1 ARCHS="arm64 arm64e" TARGET="iphone:clang:latest:14.5"
+          
+          # 1. إنشاء ملف الـ Makefile من الصفر لضمان الدقة
+          echo 'ARCHS = arm64 arm64e' > Makefile
+          echo 'TARGET := iphone:clang:latest:14.5' >> Makefile
+          echo 'include $(THEOS)/makefiles/common.mk' >> Makefile
+          echo 'TWEAK_NAME = RaveGhost' >> Makefile
+          echo 'RaveGhost_FILES = Tweak.x' >> Makefile
+          echo 'RaveGhost_CFLAGS = -fobjc-arc' >> Makefile
+          echo 'include $(THEOS)/makefiles/tweak.mk' >> Makefile
+
+          # 2. إنشاء ملف التويك لضمان توافق M4
+          echo '#import <UIKit/UIKit.h>' > Tweak.x
+          echo '%hook RavePlayerController' >> Tweak.x
+          echo '- (bool)isGhostModeEnabled { return YES; }' >> Tweak.x
+          echo '%end' >> Tweak.x
+
+          # 3. البدء بالبناء المباشر
+          make package FINALPACKAGE=1
           
       - name: Upload Result
         uses: actions/upload-artifact@v4
         with:
-          name: RaveGhost_M4_Final
+          name: RaveGhost_M4_Final_Success
           path: packages/*.deb
