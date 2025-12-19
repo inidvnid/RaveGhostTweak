@@ -1,9 +1,9 @@
-name: Build Rave Ghost
+name: Build Tweak
 on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: macos-14
+    runs-on: macos-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -13,20 +13,15 @@ jobs:
           bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
           echo "THEOS=~/theos" >> $GITHUB_ENV
 
-      - name: Download SDK
-        run: |
-          mkdir -p ~/theos/sdks
-          curl -L https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz -o sdk.tar.xz
-          tar -xf sdk.tar.xz -C ~/theos/sdks
-          rm sdk.tar.xz
-
-      - name: Build Tweak
+      - name: Build Package
         run: |
           export THEOS=~/theos
+          git clone https://github.com/theos/sdks.git $THEOS/sdks
+          make clean
           make package FINALPACKAGE=1
           
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: RaveGhost_Final
+          name: RaveGhost_Ready
           path: packages/*.deb
