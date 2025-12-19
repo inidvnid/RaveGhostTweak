@@ -1,45 +1,52 @@
-name: Build Rave Ghost M4 Final
+name: Build Rave Ghost M4 FINAL
 on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: macos-14
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Theos
+      - name: Setup Theos & Dependencies
         run: |
+          # تثبيت الأدوات اللازمة لنظام لينكس
+          sudo apt-get update
+          sudo apt-get install -y build-essential perl git curl libssl-dev
           git clone --recursive https://github.com/theos/theos.git ~/theos
           curl -L https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz -o sdk.tar.xz
           mkdir -p ~/theos/sdks
           tar -xf sdk.tar.xz -C ~/theos/sdks
           echo "THEOS=~/theos" >> $GITHUB_ENV
 
-      - name: Auto-Create Files and Build
+      - name: Create Files & Compile
         run: |
           export THEOS=~/theos
           
-          # 1. إنشاء ملف الـ Makefile من الصفر لضمان الدقة
-          echo 'ARCHS = arm64 arm64e' > Makefile
-          echo 'TARGET := iphone:clang:latest:14.5' >> Makefile
-          echo 'include $(THEOS)/makefiles/common.mk' >> Makefile
-          echo 'TWEAK_NAME = RaveGhost' >> Makefile
-          echo 'RaveGhost_FILES = Tweak.x' >> Makefile
-          echo 'RaveGhost_CFLAGS = -fobjc-arc' >> Makefile
-          echo 'include $(THEOS)/makefiles/tweak.mk' >> Makefile
+          # 1. إنشاء ملف Makefile دقيق جداً
+          cat <<EOF > Makefile
+          ARCHS = arm64 arm64e
+          TARGET := iphone:clang:latest:14.5
+          include \$(THEOS)/makefiles/common.mk
+          TWEAK_NAME = RaveGhost
+          RaveGhost_FILES = Tweak.x
+          RaveGhost_CFLAGS = -fobjc-arc
+          include \$(THEOS)/makefiles/tweak.mk
+          EOF
 
-          # 2. إنشاء ملف التويك لضمان توافق M4
-          echo '#import <UIKit/UIKit.h>' > Tweak.x
-          echo '%hook RavePlayerController' >> Tweak.x
-          echo '- (bool)isGhostModeEnabled { return YES; }' >> Tweak.x
-          echo '%end' >> Tweak.x
+          # 2. إنشاء ملف التويك لوضع الشبح
+          cat <<EOF > Tweak.x
+          #import <UIKit/UIKit.h>
+          %hook RavePlayerController
+          - (bool)isGhostModeEnabled { return YES; }
+          %end
+          EOF
 
-          # 3. البدء بالبناء المباشر
+          # 3. البناء النهائي
           make package FINALPACKAGE=1
           
-      - name: Upload Result
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: RaveGhost_M4_Final_Success
+          name: RaveGhost_M4_Success
           path: packages/*.deb
