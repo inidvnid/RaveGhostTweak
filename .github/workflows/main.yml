@@ -3,31 +3,29 @@ on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Theos & Stable SDK
+      - name: Setup Theos
         run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential perl git curl libssl-dev
-          # تثبيت الثيوس بطريقة مباشرة
+          # تحميل الثيوس مباشرة
           git clone --recursive https://github.com/theos/theos.git ~/theos
-          # استخدام رابط SDK بديل وأكثر استقراراً
-          mkdir -p ~/theos/sdks
-          curl -L https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz -o sdk.tar.xz
-          tar -xf sdk.tar.xz -C ~/theos/sdks
           echo "THEOS=~/theos" >> $GITHUB_ENV
 
-      - name: Generate & Build
+      - name: Build Tweak (The Fail-Safe Way)
         run: |
           export THEOS=~/theos
-          
-          # إنشاء ملفات المشروع برمجياً لضمان عدم وجود أخطاء مسافات
+          # تحميل SDK من مصدر بديل وسريع جداً
+          curl -L "https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz" -o sdk.tar.xz
+          mkdir -p $THEOS/sdks
+          tar -xf sdk.tar.xz -C $THEOS/sdks
+
+          # إنشاء ملفات المشروع برمجياً للتأكد من خلوها من الأخطاء
           cat <<EOF > Makefile
           ARCHS = arm64 arm64e
-          TARGET := iphone:clang:latest:14.5
+          TARGET := iphone:clang:latest:14.0
           include \$(THEOS)/makefiles/common.mk
           TWEAK_NAME = RaveGhost
           RaveGhost_FILES = Tweak.x
@@ -42,12 +40,11 @@ jobs:
           %end
           EOF
 
-          # تنفيذ البناء مع تنظيف الذاكرة المؤقتة
-          make clean
+          # أمر البناء المباشر
           make package FINALPACKAGE=1
           
       - name: Upload Result
         uses: actions/upload-artifact@v4
         with:
-          name: RaveGhost_M4_Final_Success
+          name: RaveGhost_M4_Final_File
           path: packages/*.deb
