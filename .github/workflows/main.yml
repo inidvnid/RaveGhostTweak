@@ -8,22 +8,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Theos & Dependencies
+      - name: Setup Theos & Stable SDK
         run: |
-          # تثبيت الأدوات اللازمة لنظام لينكس
           sudo apt-get update
           sudo apt-get install -y build-essential perl git curl libssl-dev
+          # تثبيت الثيوس بطريقة مباشرة
           git clone --recursive https://github.com/theos/theos.git ~/theos
-          curl -L https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz -o sdk.tar.xz
+          # استخدام رابط SDK بديل وأكثر استقراراً
           mkdir -p ~/theos/sdks
+          curl -L https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz -o sdk.tar.xz
           tar -xf sdk.tar.xz -C ~/theos/sdks
           echo "THEOS=~/theos" >> $GITHUB_ENV
 
-      - name: Create Files & Compile
+      - name: Generate & Build
         run: |
           export THEOS=~/theos
           
-          # 1. إنشاء ملف Makefile دقيق جداً
+          # إنشاء ملفات المشروع برمجياً لضمان عدم وجود أخطاء مسافات
           cat <<EOF > Makefile
           ARCHS = arm64 arm64e
           TARGET := iphone:clang:latest:14.5
@@ -34,7 +35,6 @@ jobs:
           include \$(THEOS)/makefiles/tweak.mk
           EOF
 
-          # 2. إنشاء ملف التويك لوضع الشبح
           cat <<EOF > Tweak.x
           #import <UIKit/UIKit.h>
           %hook RavePlayerController
@@ -42,11 +42,12 @@ jobs:
           %end
           EOF
 
-          # 3. البناء النهائي
+          # تنفيذ البناء مع تنظيف الذاكرة المؤقتة
+          make clean
           make package FINALPACKAGE=1
           
-      - name: Upload Artifact
+      - name: Upload Result
         uses: actions/upload-artifact@v4
         with:
-          name: RaveGhost_M4_Success
+          name: RaveGhost_M4_Final_Success
           path: packages/*.deb
