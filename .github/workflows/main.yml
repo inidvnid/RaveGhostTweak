@@ -3,27 +3,28 @@ on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: macos-15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Theos
+      - name: Hard Setup
         run: |
-          # تحميل الثيوس مباشرة
-          git clone --recursive https://github.com/theos/theos.git ~/theos
+          # تحميل الثيوس في مجلد العمل الحالي لضمان الصلاحيات
+          git clone --recursive https://github.com/theos/theos.git $GITHUB_WORKSPACE/theos
           
-          # تحميل SDK 16.5 (الأحدث والأكثر توافقاً مع M4)
+          # تحميل الـ SDK وفك ضغطه باستخدام أمر نظام ماك المباشر
           curl -L "https://github.com/theos/sdks/raw/master/iPhoneOS16.5.sdk.tar.xz" -o sdk.tar.xz
-          mkdir -p ~/theos/sdks
-          tar -xf sdk.tar.xz -C ~/theos/sdks/
-          echo "THEOS=~/theos" >> $GITHUB_ENV
-
-      - name: Direct Build
-        run: |
-          export THEOS=~/theos
+          mkdir -p $GITHUB_WORKSPACE/theos/sdks
+          sudo tar -xJf sdk.tar.xz -C $GITHUB_WORKSPACE/theos/sdks/
           
-          # إنشاء ملف Makefile محدث ليدعم M4
+          echo "THEOS=$GITHUB_WORKSPACE/theos" >> $GITHUB_ENV
+
+      - name: Compilation
+        run: |
+          export THEOS=$GITHUB_WORKSPACE/theos
+          
+          # إنشاء الملفات برمجياً لتجنب أي تعارض
           cat <<EOF > Makefile
           ARCHS = arm64 arm64e
           TARGET := iphone:clang:latest:15.0
@@ -34,7 +35,6 @@ jobs:
           include \$(THEOS)/makefiles/tweak.mk
           EOF
 
-          # ملف التويك
           cat <<EOF > Tweak.x
           #import <UIKit/UIKit.h>
           %hook RavePlayerController
@@ -42,11 +42,11 @@ jobs:
           %end
           EOF
 
-          # البناء النهائي
+          # البناء القسري
           make package FINALPACKAGE=1
           
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: RaveGhost_M4_Final
+          name: RaveGhost_M4_Ready
           path: packages/*.deb
