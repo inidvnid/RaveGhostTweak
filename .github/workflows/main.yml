@@ -14,13 +14,13 @@ jobs:
           bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
           echo "THEOS=~/theos" >> $GITHUB_ENV
           
-      - name: Build Tweak for M2/M4/iPhone11
+      - name: Build Tweak
         run: |
           export THEOS=~/theos
-          make clean all
+          make all
         
-      - name: Upload Dylib Artifact
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Telegram_Ghost_M2_M4_Ready
-          path: .theos/obj/debug/*.dylib
+          name: Telegram_Ghost_Ready
+          path: "./obj/*.dylib"
