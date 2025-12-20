@@ -1,4 +1,4 @@
-name: Build Rave Ghost M4 Success
+name: Build Rave Ghost M4 FINAL SUCCESS
 on: [push, pull_request]
 
 jobs:
@@ -8,22 +8,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Final Success Script
+      - name: Preparation
         run: |
-          # 1. تثبيت الأدوات الأساسية
+          # تثبيت الأدوات مع تحديث أذونات النظام
           sudo apt-get update
           sudo apt-get install -y build-essential perl git curl libssl-dev tar
-          
-          # 2. تحميل الثيوس في مجلد العمل لتجنب أخطاء الأذونات
           git clone --recursive https://github.com/theos/theos.git $GITHUB_WORKSPACE/theos
+          
+          # تحميل الـ SDK وفك الضغط مع منح صلاحيات القراءة والكتابة
+          curl -L "https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz" -o sdk.tar.xz
+          mkdir -p $GITHUB_WORKSPACE/theos/sdks
+          tar -xf sdk.tar.xz -C $GITHUB_WORKSPACE/theos/sdks/
+          chmod -R 777 $GITHUB_WORKSPACE/theos
+          echo "THEOS=$GITHUB_WORKSPACE/theos" >> $GITHUB_ENV
+
+      - name: Final Compilation
+        run: |
           export THEOS=$GITHUB_WORKSPACE/theos
           
-          # 3. تحميل الـ SDK وفك ضغطها يدوياً
-          mkdir -p $THEOS/sdks
-          curl -L "https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz" -o sdk.tar.xz
-          tar -xf sdk.tar.xz -C $THEOS/sdks/
-          
-          # 4. كتابة ملفات المشروع برمجياً لضمان الدقة المطلقة
+          # إنشاء الملفات برمجياً لتجنب أي خطأ بشري في التنسيق
           cat <<EOF > Makefile
           ARCHS = arm64 arm64e
           TARGET := iphone:clang:latest:14.5
@@ -41,7 +44,8 @@ jobs:
           %end
           EOF
 
-          # 5. البناء النهائي
+          # البناء مع تنظيف الذاكرة المؤقتة لضمان ملف جديد كلياً
+          make clean
           make package FINALPACKAGE=1
           
       - name: Upload
