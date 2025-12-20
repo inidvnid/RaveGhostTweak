@@ -1,54 +1,25 @@
-name: Build Rave Ghost M4 FINAL
-on: [push, pull_request]
+name: Build Rave Ghost for iPhone 11
+on:
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
-      - name: Setup Environment
+      - name: Setup Theos
+        uses: logan-arkin/setup-theos@v1.1.0
+
+      - name: Build Tweak
         run: |
-          git clone --recursive https://github.com/theos/theos.git ~/theos
-          brew install ldid
-          mkdir -p ~/theos/sdks
-          ln -s /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk ~/theos/sdks/iPhoneOS.sdk
-          echo "THEOS=~/theos" >> $GITHUB_ENV
-
-      - name: Create Project Files
-        run: |
-          # 1. Makefile
-          cat <<EOF > Makefile
-          ARCHS = arm64 arm64e
-          TARGET := iphone:clang:latest:14.0
-          include \$(THEOS)/makefiles/common.mk
-          TWEAK_NAME = RaveGhost
-          RaveGhost_FILES = Tweak.x
-          RaveGhost_CFLAGS = -fobjc-arc
-          include \$(THEOS)/makefiles/tweak.mk
-          EOF
-
-          # 2. Tweak.x
-          cat <<EOF > Tweak.x
-          #import <UIKit/UIKit.h>
-          %hook RavePlayerController
-          - (bool)isGhostModeEnabled { return YES; }
-          %end
-          EOF
-
-          # 3. ملف الفلتر (هذا هو سبب الفشل في صورتك الأخيرة)
-          cat <<EOF > RaveGhost.plist
-          { Filter = { Bundles = ( "com.rave.rave" ); }; }
-          EOF
-
-      - name: Build and Package
-        run: |
-          export THEOS=~/theos
-          make package FINALPACKAGE=1
-          
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+          sed -i 's/arm64e/arm64/g' Makefile
+          export THEOS_PACKAGE_SCHEME=rootless
+          make clean all PACKAGE_FORMAT=dylib
+        
+      - name: Upload Result
+        uses: actions/upload-artifact@v3
         with:
-          name: RaveGhost_M4_Final
-          path: packages/*.deb
+          name: RaveGhost_iPhone11_Ready
+          path: .theos/obj/debug/*.dylib
