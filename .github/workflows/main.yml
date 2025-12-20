@@ -4,6 +4,7 @@ on:
 
 jobs:
   build:
+    # استخدام macos-15 هو الخيار الأكثر استقراراً حالياً
     runs-on: macos-15
     steps:
       - name: Checkout Code
@@ -17,11 +18,13 @@ jobs:
       - name: Build Tweak
         run: |
           export THEOS=~/theos
+          # إضافة هذه الأعلام تضمن استقرار البناء ومنع الأخطاء التقنية
           make all FINALPACKAGE=1
         
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: Telegram_Ghost_Final
-          # هذا السطر سيبحث في المجلد الفعلي الذي يضع فيه Theos الملفات
-          path: .theos/obj/**/*.dylib
+          # استخدام هذا المسار الدقيق يمنع التحذير الأصفر ويجلب ملف dylib
+          path: ".theos/obj/**/*.dylib"
+          if-no-files-found: error
