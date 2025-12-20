@@ -8,24 +8,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Theos & SDK
+      - name: Manual Setup (No Install)
         run: |
-          # تثبيت الثيوس باستخدام السكريبت الرسمي المعتمد
-          bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
+          # تحميل الثيوس كملفات عادية في مجلد العمل لتجنب أخطاء الصلاحيات
+          git clone --recursive https://github.com/theos/theos.git $GITHUB_WORKSPACE/theos
           
-          # إعداد المسارات
-          echo "THEOS=~/theos" >> $GITHUB_ENV
-          
-          # تحميل الـ SDK ووضعه في مكانه الصحيح برمجياً
+          # تحميل الـ SDK وفك ضغطه يدوياً
           curl -L "https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz" -o sdk.tar.xz
-          mkdir -p ~/theos/sdks
-          tar -xf sdk.tar.xz -C ~/theos/sdks/
-
-      - name: Create Files & Build
-        run: |
-          export THEOS=~/theos
+          mkdir -p $GITHUB_WORKSPACE/theos/sdks
+          tar -xf sdk.tar.xz -C $GITHUB_WORKSPACE/theos/sdks/
           
-          # كتابة ملف Makefile
+          # تعريف المسارات محلياً
+          echo "THEOS=$GITHUB_WORKSPACE/theos" >> $GITHUB_ENV
+
+      - name: Build Tweak
+        run: |
+          export THEOS=$GITHUB_WORKSPACE/theos
+          
+          # إنشاء الملفات برمجياً لضمان عدم وجود أخطاء مسافات من الآيباد
           cat <<EOF > Makefile
           ARCHS = arm64 arm64e
           TARGET := iphone:clang:latest:14.5
@@ -36,7 +36,6 @@ jobs:
           include \$(THEOS)/makefiles/tweak.mk
           EOF
 
-          # كتابة ملف التويك
           cat <<EOF > Tweak.x
           #import <UIKit/UIKit.h>
           %hook RavePlayerController
@@ -44,7 +43,8 @@ jobs:
           %end
           EOF
 
-          # تشغيل البناء النهائي
+          # البناء باستخدام المسار المباشر
+          $THEOS/bin/nic.pl --lib
           make package FINALPACKAGE=1
           
       - name: Upload
