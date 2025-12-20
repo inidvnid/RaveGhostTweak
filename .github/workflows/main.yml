@@ -1,4 +1,4 @@
-name: Build Rave Ghost M4 Success
+name: Build Rave Ghost M4 FINAL
 on: [push, pull_request]
 
 jobs:
@@ -8,26 +8,27 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Environment
+      - name: Setup Theos (Local Mode)
         run: |
+          # تحميل الثيوس داخل مجلد المشروع لتجنب أخطاء الصلاحيات
           git clone --recursive https://github.com/theos/theos.git $GITHUB_WORKSPACE/theos
           curl -L https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz -o sdk.tar.xz
           mkdir -p $GITHUB_WORKSPACE/theos/sdks
           tar -xf sdk.tar.xz -C $GITHUB_WORKSPACE/theos/sdks
           echo "THEOS=$GITHUB_WORKSPACE/theos" >> $GITHUB_ENV
 
-      - name: Final Build Attempt
+      - name: Create & Compile (M4 Optimized)
         run: |
           export THEOS=$GITHUB_WORKSPACE/theos
           
-          # إنشاء ملفات المشروع برمجياً
+          # إنشاء الملفات برمجياً لضمان الدقة
           cat <<EOF > Makefile
           ARCHS = arm64 arm64e
           TARGET := iphone:clang:latest:15.0
           include \$(THEOS)/makefiles/common.mk
           TWEAK_NAME = RaveGhost
           RaveGhost_FILES = Tweak.x
-          RaveGhost_CFLAGS = -fobjc-arc -Wno-error
+          RaveGhost_CFLAGS = -fobjc-arc
           include \$(THEOS)/makefiles/tweak.mk
           EOF
 
@@ -38,11 +39,12 @@ jobs:
           %end
           EOF
 
-          # بناء المشروع وحفظ الملف في المجلد الرئيسي مباشرة
+          # البناء المباشر
+          $THEOS/bin/nic.pl --lib
           make package FINALPACKAGE=1
           cp packages/*.deb ./RaveGhost_M4.deb
-          
-      - name: Upload Final File
+
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: RaveGhost_M4_Final
