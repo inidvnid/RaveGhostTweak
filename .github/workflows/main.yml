@@ -1,33 +1,29 @@
-name: Build Rave Ghost M4 FINAL
+name: Build Rave Ghost M4 FINAL FAST
 on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: macos-12
+    runs-on: macos-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Theos & SDK
+      - name: Fast Setup
         run: |
-          # تحميل الثيوس في مجلد المستخدم
+          # تحميل الثيوس والـ SDK بسرعة عالية جداً
           git clone --recursive https://github.com/theos/theos.git ~/theos
-          
-          # تحميل الـ SDK 14.5 الموثوق
           curl -L "https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz" -o sdk.tar.xz
-          mkdir -p ~/theos/sdks
           tar -xf sdk.tar.xz -C ~/theos/sdks/
-          
           echo "THEOS=~/theos" >> $GITHUB_ENV
 
       - name: Build Tweak
         run: |
           export THEOS=~/theos
           
-          # إنشاء Makefile مع استهداف دقيق لمعمارية M4
+          # إنشاء Makefile مبسط جداً لسرعة التنفيذ
           cat <<EOF > Makefile
           ARCHS = arm64 arm64e
-          TARGET := iphone:clang:latest:14.5
+          TARGET := iphone:clang:latest:14.0
           include \$(THEOS)/makefiles/common.mk
           TWEAK_NAME = RaveGhost
           RaveGhost_FILES = Tweak.x
@@ -35,7 +31,7 @@ jobs:
           include \$(THEOS)/makefiles/tweak.mk
           EOF
 
-          # إنشاء ملف التويك
+          # ملف التويك
           cat <<EOF > Tweak.x
           #import <UIKit/UIKit.h>
           %hook RavePlayerController
@@ -43,11 +39,11 @@ jobs:
           %end
           EOF
 
-          # تنفيذ البناء مع تنظيف كامل
-          make clean package FINALPACKAGE=1
+          # البناء المباشر
+          make package FINALPACKAGE=1
           
-      - name: Upload
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: RaveGhost_M4_Final
+          name: RaveGhost_M4_Ready
           path: packages/*.deb
