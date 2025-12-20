@@ -1,11 +1,10 @@
-name: Build Telegram Ultra Ghost
+name: Build ScreenShot Bypass
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    # استخدام macos-15 هو الخيار الأكثر استقراراً حالياً
-    runs-on: macos-15
+    runs-on: macos-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -18,13 +17,10 @@ jobs:
       - name: Build Tweak
         run: |
           export THEOS=~/theos
-          # إضافة هذه الأعلام تضمن استقرار البناء ومنع الأخطاء التقنية
           make all FINALPACKAGE=1
         
-      - name: Upload Artifact
+      - name: Upload Tweak
         uses: actions/upload-artifact@v4
         with:
-          name: Telegram_Ghost_Final
-          # استخدام هذا المسار الدقيق يمنع التحذير الأصفر ويجلب ملف dylib
+          name: Telegram_Screenshot_Bypass
           path: ".theos/obj/**/*.dylib"
-          if-no-files-found: error
