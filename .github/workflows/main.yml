@@ -1,4 +1,4 @@
-name: Build Rave Ghost M4 FINAL
+name: Build Rave Ghost M4 Final
 on: [push, pull_request]
 
 jobs:
@@ -8,20 +8,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Theos (Local Mode)
+      - name: Setup Theos (Internal SDK Mode)
         run: |
-          # تحميل الثيوس داخل مجلد المشروع لتجنب أخطاء الصلاحيات
-          git clone --recursive https://github.com/theos/theos.git $GITHUB_WORKSPACE/theos
-          curl -L https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz -o sdk.tar.xz
-          mkdir -p $GITHUB_WORKSPACE/theos/sdks
-          tar -xf sdk.tar.xz -C $GITHUB_WORKSPACE/theos/sdks
-          echo "THEOS=$GITHUB_WORKSPACE/theos" >> $GITHUB_ENV
+          # تحميل الثيوس فقط بدون ملفات خارجية
+          git clone --recursive https://github.com/theos/theos.git ~/theos
+          echo "THEOS=~/theos" >> $GITHUB_ENV
 
-      - name: Create & Compile (M4 Optimized)
+      - name: Create & Compile (Using Internal Xcode SDK)
         run: |
-          export THEOS=$GITHUB_WORKSPACE/theos
+          export THEOS=~/theos
           
-          # إنشاء الملفات برمجياً لضمان الدقة
+          # إنشاء ملف الـ Makefile ليستهدف الـ SDK الداخلي لنظام macOS 15
           cat <<EOF > Makefile
           ARCHS = arm64 arm64e
           TARGET := iphone:clang:latest:15.0
@@ -32,6 +29,7 @@ jobs:
           include \$(THEOS)/makefiles/tweak.mk
           EOF
 
+          # إنشاء ملف التويك
           cat <<EOF > Tweak.x
           #import <UIKit/UIKit.h>
           %hook RavePlayerController
@@ -39,8 +37,7 @@ jobs:
           %end
           EOF
 
-          # البناء المباشر
-          $THEOS/bin/nic.pl --lib
+          # البناء باستخدام SDK النظام الداخلي لتجنب أخطاء التحميل
           make package FINALPACKAGE=1
           cp packages/*.deb ./RaveGhost_M4.deb
 
