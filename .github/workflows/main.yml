@@ -16,18 +16,18 @@ jobs:
           tar -xf sdk.tar.xz -C $GITHUB_WORKSPACE/theos/sdks
           echo "THEOS=$GITHUB_WORKSPACE/theos" >> $GITHUB_ENV
 
-      - name: M4 Optimized Build
+      - name: Final Build Attempt
         run: |
           export THEOS=$GITHUB_WORKSPACE/theos
           
-          # إعادة إنشاء الملفات بإعدادات M4 الصارمة
+          # إنشاء ملفات المشروع برمجياً
           cat <<EOF > Makefile
           ARCHS = arm64 arm64e
-          TARGET := iphone:clang:latest:16.0
+          TARGET := iphone:clang:latest:15.0
           include \$(THEOS)/makefiles/common.mk
           TWEAK_NAME = RaveGhost
           RaveGhost_FILES = Tweak.x
-          RaveGhost_CFLAGS = -fobjc-arc -Wno-error -Wno-module-import-in-extern-c
+          RaveGhost_CFLAGS = -fobjc-arc -Wno-error
           include \$(THEOS)/makefiles/tweak.mk
           EOF
 
@@ -38,11 +38,12 @@ jobs:
           %end
           EOF
 
-          # البناء مع تجاهل ملفات التعريف القديمة
+          # بناء المشروع وحفظ الملف في المجلد الرئيسي مباشرة
           make package FINALPACKAGE=1
+          cp packages/*.deb ./RaveGhost_M4.deb
           
-      - name: Upload
+      - name: Upload Final File
         uses: actions/upload-artifact@v4
         with:
           name: RaveGhost_M4_Final
-          path: packages/*.deb
+          path: RaveGhost_M4.deb
