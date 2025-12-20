@@ -1,4 +1,4 @@
-name: Build Rave Ghost for iPhone 11
+name: Build Telegram Ultra Ghost
 on:
   workflow_dispatch:
 
@@ -6,20 +6,18 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Setup Theos
+      - name: Setup Theos Environment
         uses: logan-arkin/setup-theos@v1.1.0
 
-      - name: Build Tweak
+      - name: Build Tweak for M2/M4/iPhone11
         run: |
-          sed -i 's/arm64e/arm64/g' Makefile
-          export THEOS_PACKAGE_SCHEME=rootless
-          make clean all PACKAGE_FORMAT=dylib
+          make clean all
         
-      - name: Upload Result
+      - name: Upload Dylib Artifact
         uses: actions/upload-artifact@v3
         with:
-          name: RaveGhost_iPhone11_Ready
+          name: Telegram_Ghost_M2_M4_Ready
           path: .theos/obj/debug/*.dylib
