@@ -3,23 +3,27 @@ on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: All-In-One Build
+      - name: Final Success Script
         run: |
-          # 1. تحميل الثيوس يدوياً في مكان مضمون
-          git clone --recursive https://github.com/theos/theos.git ~/theos
-          export THEOS=~/theos
+          # 1. تثبيت الأدوات الأساسية
+          sudo apt-get update
+          sudo apt-get install -y build-essential perl git curl libssl-dev tar
           
-          # 2. تحميل الـ SDK برابط بديل (GitHub Raw) لضمان الوصول
+          # 2. تحميل الثيوس في مجلد العمل لتجنب أخطاء الأذونات
+          git clone --recursive https://github.com/theos/theos.git $GITHUB_WORKSPACE/theos
+          export THEOS=$GITHUB_WORKSPACE/theos
+          
+          # 3. تحميل الـ SDK وفك ضغطها يدوياً
           mkdir -p $THEOS/sdks
-          curl -L "https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz" -o $THEOS/sdks/sdk.tar.xz
-          tar -xf $THEOS/sdks/sdk.tar.xz -C $THEOS/sdks/
+          curl -L "https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz" -o sdk.tar.xz
+          tar -xf sdk.tar.xz -C $THEOS/sdks/
           
-          # 3. كتابة ملفات المشروع داخل السيرفر مباشرة
+          # 4. كتابة ملفات المشروع برمجياً لضمان الدقة المطلقة
           cat <<EOF > Makefile
           ARCHS = arm64 arm64e
           TARGET := iphone:clang:latest:14.5
@@ -37,10 +41,10 @@ jobs:
           %end
           EOF
 
-          # 4. أمر البناء النهائي
+          # 5. البناء النهائي
           make package FINALPACKAGE=1
           
-      - name: Upload Artifact
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: RaveGhost_M4_Final
