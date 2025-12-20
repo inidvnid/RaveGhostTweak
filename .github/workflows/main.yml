@@ -8,13 +8,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Theos (Internal)
+      - name: Setup Theos & SDK
         run: |
-          # تحميل الثيوس فقط
+          # تحميل الثيوس
           git clone --recursive https://github.com/theos/theos.git ~/theos
           
-          # استخدام الـ SDK الداخلي لنظام الماك مباشرة لتجنب أخطاء التحميل
-          # هذا هو السر للنجاح في جهاز M4
+          # تحميل أداة التوقيع ldid وحل مشكلة الخطأ الأخير
+          brew install ldid
+          
+          # استخدام الـ SDK الداخلي للماك (الأسرع والأضمن)
           mkdir -p ~/theos/sdks
           ln -s /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk ~/theos/sdks/iPhoneOS.sdk
           
@@ -24,7 +26,6 @@ jobs:
         run: |
           export THEOS=~/theos
           
-          # إنشاء Makefile متوافق مع الـ SDK الداخلي
           cat <<EOF > Makefile
           ARCHS = arm64 arm64e
           TARGET := iphone:clang:latest:14.0
@@ -35,7 +36,6 @@ jobs:
           include \$(THEOS)/makefiles/tweak.mk
           EOF
 
-          # ملف التويك (كود الشبح)
           cat <<EOF > Tweak.x
           #import <UIKit/UIKit.h>
           %hook RavePlayerController
@@ -43,7 +43,7 @@ jobs:
           %end
           EOF
 
-          # البناء القوي
+          # البناء مع توقيع الملف تلقائياً
           make package FINALPACKAGE=1
           
       - name: Upload Artifact
