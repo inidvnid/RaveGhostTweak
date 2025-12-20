@@ -1,32 +1,31 @@
-name: Build Rave Ghost M4 FINAL SUCCESS
+name: Build Rave Ghost M4 FINAL
 on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: macos-15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Preparation
+      - name: Install Theos & SDK
         run: |
-          # تثبيت الأدوات مع تحديث أذونات النظام
-          sudo apt-get update
-          sudo apt-get install -y build-essential perl git curl libssl-dev tar
-          git clone --recursive https://github.com/theos/theos.git $GITHUB_WORKSPACE/theos
+          # تثبيت الثيوس باستخدام السكريبت الرسمي المعتمد
+          bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
           
-          # تحميل الـ SDK وفك الضغط مع منح صلاحيات القراءة والكتابة
+          # إعداد المسارات
+          echo "THEOS=~/theos" >> $GITHUB_ENV
+          
+          # تحميل الـ SDK ووضعه في مكانه الصحيح برمجياً
           curl -L "https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz" -o sdk.tar.xz
-          mkdir -p $GITHUB_WORKSPACE/theos/sdks
-          tar -xf sdk.tar.xz -C $GITHUB_WORKSPACE/theos/sdks/
-          chmod -R 777 $GITHUB_WORKSPACE/theos
-          echo "THEOS=$GITHUB_WORKSPACE/theos" >> $GITHUB_ENV
+          mkdir -p ~/theos/sdks
+          tar -xf sdk.tar.xz -C ~/theos/sdks/
 
-      - name: Final Compilation
+      - name: Create Files & Build
         run: |
-          export THEOS=$GITHUB_WORKSPACE/theos
+          export THEOS=~/theos
           
-          # إنشاء الملفات برمجياً لتجنب أي خطأ بشري في التنسيق
+          # كتابة ملف Makefile
           cat <<EOF > Makefile
           ARCHS = arm64 arm64e
           TARGET := iphone:clang:latest:14.5
@@ -37,6 +36,7 @@ jobs:
           include \$(THEOS)/makefiles/tweak.mk
           EOF
 
+          # كتابة ملف التويك
           cat <<EOF > Tweak.x
           #import <UIKit/UIKit.h>
           %hook RavePlayerController
@@ -44,8 +44,7 @@ jobs:
           %end
           EOF
 
-          # البناء مع تنظيف الذاكرة المؤقتة لضمان ملف جديد كلياً
-          make clean
+          # تشغيل البناء النهائي
           make package FINALPACKAGE=1
           
       - name: Upload
