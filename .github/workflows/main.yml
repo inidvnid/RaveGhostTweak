@@ -8,23 +8,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Hard Setup
+      - name: Lean Setup
         run: |
-          # تحميل الثيوس في مجلد العمل الحالي لضمان الصلاحيات
+          # تحميل الثيوس فقط بدون أي ملفات خارجية
           git clone --recursive https://github.com/theos/theos.git $GITHUB_WORKSPACE/theos
-          
-          # تحميل الـ SDK وفك ضغطه باستخدام أمر نظام ماك المباشر
-          curl -L "https://github.com/theos/sdks/raw/master/iPhoneOS16.5.sdk.tar.xz" -o sdk.tar.xz
-          mkdir -p $GITHUB_WORKSPACE/theos/sdks
-          sudo tar -xJf sdk.tar.xz -C $GITHUB_WORKSPACE/theos/sdks/
-          
           echo "THEOS=$GITHUB_WORKSPACE/theos" >> $GITHUB_ENV
 
-      - name: Compilation
+      - name: Native Compilation
         run: |
           export THEOS=$GITHUB_WORKSPACE/theos
           
-          # إنشاء الملفات برمجياً لتجنب أي تعارض
+          # إنشاء ملف Makefile يعتمد على مكتبات Xcode الداخلية للسيرفر
           cat <<EOF > Makefile
           ARCHS = arm64 arm64e
           TARGET := iphone:clang:latest:15.0
@@ -35,6 +29,7 @@ jobs:
           include \$(THEOS)/makefiles/tweak.mk
           EOF
 
+          # إنشاء ملف التويك
           cat <<EOF > Tweak.x
           #import <UIKit/UIKit.h>
           %hook RavePlayerController
@@ -42,7 +37,7 @@ jobs:
           %end
           EOF
 
-          # البناء القسري
+          # البناء باستخدام مترجم Xcode المدمج لتجنب أخطاء الأذونات
           make package FINALPACKAGE=1
           
       - name: Upload
