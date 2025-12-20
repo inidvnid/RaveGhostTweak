@@ -3,38 +3,31 @@ on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: macos-12
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Force Setup Theos
+      - name: Setup Theos & SDK
         run: |
-          # تثبيت الأدوات وضمان وجود المترجم
-          sudo apt-get update
-          sudo apt-get install -y build-essential perl git curl libssl-dev tar clang
-          
-          # تثبيت الثيوس في مسار نظام ثابت
+          # تحميل الثيوس في مجلد المستخدم
           git clone --recursive https://github.com/theos/theos.git ~/theos
           
-          # تحميل الـ SDK وتثبيته في المسار الافتراضي الذي يبحث عنه المترجم تلقائياً
+          # تحميل الـ SDK 14.5 الموثوق
           curl -L "https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz" -o sdk.tar.xz
           mkdir -p ~/theos/sdks
           tar -xf sdk.tar.xz -C ~/theos/sdks/
           
-          # تعيين المسارات بشكل دائم للسيرفر
           echo "THEOS=~/theos" >> $GITHUB_ENV
-          echo "~/theos/bin" >> $GITHUB_PATH
 
-      - name: Create & Build (Final Attempt)
+      - name: Build Tweak
         run: |
           export THEOS=~/theos
           
-          # إنشاء Makefile مع توجيه المترجم للمسار الصحيح للـ SDK
+          # إنشاء Makefile مع استهداف دقيق لمعمارية M4
           cat <<EOF > Makefile
           ARCHS = arm64 arm64e
           TARGET := iphone:clang:latest:14.5
-          SYSROOT = \$(THEOS)/sdks/iPhoneOS14.5.sdk
           include \$(THEOS)/makefiles/common.mk
           TWEAK_NAME = RaveGhost
           RaveGhost_FILES = Tweak.x
@@ -50,12 +43,11 @@ jobs:
           %end
           EOF
 
-          # البناء النهائي مع مسح الذاكرة المؤقتة
-          make clean
-          make package FINALPACKAGE=1
+          # تنفيذ البناء مع تنظيف كامل
+          make clean package FINALPACKAGE=1
           
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: RaveGhost_M4_Fixed
+          name: RaveGhost_M4_Final
           path: packages/*.deb
