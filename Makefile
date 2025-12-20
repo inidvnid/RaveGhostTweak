@@ -2,7 +2,7 @@
 ARCHS = arm64 arm64e
 TARGET = iphone:clang:latest:15.0
 
-# حل جذري لخطأ Code 2: إجبار النظام على وضع dylib
+# إعدادات لمنع خطأ dylib-format
 FINALPACKAGE = 1
 DEBUG = 0
 
@@ -12,5 +12,4 @@ TWEAK_NAME = TelegramUltraGhost
 TelegramUltraGhost_FILES = Tweak.x
 TelegramUltraGhost_CFLAGS = -fobjc-arc
 
-# إبقاء البناء في صيغة dylib للحقن المباشر في Feather
 include $(THEOS_MAKE_PATH)/tweak.mk
