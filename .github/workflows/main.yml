@@ -4,32 +4,20 @@ on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
+    # استخدام حاوية مجهزة خصيصاً لبناء تويكات iOS
+    container:
+      image: ghcr.io/theos/theos:latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Theos & Toolchain
+      - name: Ultimate Build
         run: |
-          # 1. تثبيت المتطلبات الأساسية لنظام لينكس
-          sudo apt-get update
-          sudo apt-get install -y build-essential perl git curl libssl-dev tar
+          # تحميل الـ SDK داخل الحاوية
+          curl -L "https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz" -o $THEOS/sdks/sdk.tar.xz
+          tar -xf $THEOS/sdks/sdk.tar.xz -C $THEOS/sdks/
           
-          # 2. تحميل الثيوس في مسار نظيف
-          git clone --recursive https://github.com/theos/theos.git ~/theos
-          
-          # 3. تحميل الـ SDK وفك ضغطه
-          curl -L "https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz" -o sdk.tar.xz
-          mkdir -p ~/theos/sdks
-          tar -xf sdk.tar.xz -C ~/theos/sdks/
-          
-          # 4. تعيين المتغيرات البيئية
-          echo "THEOS=~/theos" >> $GITHUB_ENV
-
-      - name: Force Build
-        run: |
-          export THEOS=~/theos
-          
-          # إنشاء الملفات داخل السيرفر لضمان سلامة التنسيق
+          # إنشاء الملفات برمجياً لضمان الدقة
           cat <<EOF > Makefile
           ARCHS = arm64 arm64e
           TARGET := iphone:clang:latest:14.5
@@ -47,7 +35,7 @@ jobs:
           %end
           EOF
 
-          # البناء النهائي مع تجاهل تحذيرات النظام
+          # البناء النهائي
           make package FINALPACKAGE=1
           
       - name: Upload
