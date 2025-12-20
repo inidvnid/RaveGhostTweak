@@ -23,4 +23,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Telegram_Ghost_Ready
-          path: "./obj/*.dylib"
+          # هذا التعديل سيجعل GitHub يبحث في كل المجلدات ويجد ملفك بالتأكيد
+          path: "**/*.dylib"
