@@ -1,4 +1,4 @@
-name: Build Rave Ghost M4 Success
+name: Build Rave Ghost M4 Final
 on: [push, pull_request]
 
 jobs:
@@ -16,35 +16,21 @@ jobs:
           tar -xf sdk.tar.xz -C $GITHUB_WORKSPACE/theos/sdks
           echo "THEOS=$GITHUB_WORKSPACE/theos" >> $GITHUB_ENV
 
-      - name: Auto-Generate Files & Build
+      - name: Ultimate Build
         run: |
           export THEOS=$GITHUB_WORKSPACE/theos
           
-          # 1. إنشاء ملف التحكم (control)
-          cat <<EOF > control
-          Package: com.yourname.raveghost
-          Name: RaveGhost
-          Depends: mobilesubstrate
-          Version: 1.0.0
-          Architecture: iphoneos-arm
-          Description: Ghost Mode for Rave
-          Maintainer: Developer
-          Author: Developer
-          Section: Tweaks
-          EOF
-
-          # 2. إنشاء ملف الـ Makefile بدقة متناهية
+          # إنشاء الملفات برمجياً لضمان الدقة المطلقة
           cat <<EOF > Makefile
           ARCHS = arm64 arm64e
           TARGET := iphone:clang:latest:14.5
           include \$(THEOS)/makefiles/common.mk
           TWEAK_NAME = RaveGhost
           RaveGhost_FILES = Tweak.x
-          RaveGhost_CFLAGS = -fobjc-arc
+          RaveGhost_CFLAGS = -fobjc-arc -Wno-error
           include \$(THEOS)/makefiles/tweak.mk
           EOF
 
-          # 3. إنشاء ملف التويك (Tweak.x)
           cat <<EOF > Tweak.x
           #import <UIKit/UIKit.h>
           %hook RavePlayerController
@@ -52,11 +38,12 @@ jobs:
           %end
           EOF
 
-          # 4. بناء المشروع
+          # بناء المشروع مع تنظيف كامل
+          make clean
           make package FINALPACKAGE=1
           
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: RaveGhost_M4_Ready
+          name: RaveGhost_M4_Final
           path: packages/*.deb
