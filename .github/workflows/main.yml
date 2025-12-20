@@ -3,29 +3,33 @@ on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: macos-15
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Manual Setup (No Install)
+      - name: Setup Theos & Toolchain
         run: |
-          # تحميل الثيوس كملفات عادية في مجلد العمل لتجنب أخطاء الصلاحيات
-          git clone --recursive https://github.com/theos/theos.git $GITHUB_WORKSPACE/theos
+          # 1. تثبيت المتطلبات الأساسية لنظام لينكس
+          sudo apt-get update
+          sudo apt-get install -y build-essential perl git curl libssl-dev tar
           
-          # تحميل الـ SDK وفك ضغطه يدوياً
+          # 2. تحميل الثيوس في مسار نظيف
+          git clone --recursive https://github.com/theos/theos.git ~/theos
+          
+          # 3. تحميل الـ SDK وفك ضغطه
           curl -L "https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz" -o sdk.tar.xz
-          mkdir -p $GITHUB_WORKSPACE/theos/sdks
-          tar -xf sdk.tar.xz -C $GITHUB_WORKSPACE/theos/sdks/
+          mkdir -p ~/theos/sdks
+          tar -xf sdk.tar.xz -C ~/theos/sdks/
           
-          # تعريف المسارات محلياً
-          echo "THEOS=$GITHUB_WORKSPACE/theos" >> $GITHUB_ENV
+          # 4. تعيين المتغيرات البيئية
+          echo "THEOS=~/theos" >> $GITHUB_ENV
 
-      - name: Build Tweak
+      - name: Force Build
         run: |
-          export THEOS=$GITHUB_WORKSPACE/theos
+          export THEOS=~/theos
           
-          # إنشاء الملفات برمجياً لضمان عدم وجود أخطاء مسافات من الآيباد
+          # إنشاء الملفات داخل السيرفر لضمان سلامة التنسيق
           cat <<EOF > Makefile
           ARCHS = arm64 arm64e
           TARGET := iphone:clang:latest:14.5
@@ -43,8 +47,7 @@ jobs:
           %end
           EOF
 
-          # البناء باستخدام المسار المباشر
-          $THEOS/bin/nic.pl --lib
+          # البناء النهائي مع تجاهل تحذيرات النظام
           make package FINALPACKAGE=1
           
       - name: Upload
