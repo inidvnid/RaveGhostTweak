@@ -1,11 +1,14 @@
-PACKAGE_FORMAT = dylib
-ARCHS = arm64
+# دعم آيفون 11 وآيباد M2/M4
+ARCHS = arm64 arm64e
 TARGET = iphone:clang:latest:15.0
+
+# إنتاج ملف dylib مباشرة للحقن في Feather
+PACKAGE_FORMAT = dylib
 
 include $(THEOS)/makefiles/common.mk
 
-TWEAK_NAME = RaveGhost
-RaveGhost_FILES = Tweak.x
-RaveGhost_CFLAGS = -fobjc-arc
+TWEAK_NAME = TelegramUltraGhost
+TelegramUltraGhost_FILES = Tweak.x
+TelegramUltraGhost_CFLAGS = -fobjc-arc
 
 include $(THEOS_MAKE_PATH)/tweak.mk
