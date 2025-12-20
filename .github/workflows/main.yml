@@ -9,8 +9,8 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Theos Environment
-        uses: theos/setup-theos@master
+      - name: Setup Theos
+        uses: logan-arkin/setup-theos@v1.1.0
 
       - name: Build Tweak for M2/M4/iPhone11
         run: |
