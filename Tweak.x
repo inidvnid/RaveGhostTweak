@@ -1,11 +1,18 @@
-%hook RaveRoomParticipant
-- (bool)isHidden {
-    return YES;
+#import <UIKit/UIKit.h>
+
+%hook RaveConnection
+- (void)sendPacket:(id)packet {
+    // إذا كان الباكيت يحتوي على معلومات الانضمام، لا ترسله
+    if ([packet containsString:@"join_room"]) {
+        return;
+    }
+    %orig;
 }
 %end
 
-%hook RavePlayer
-- (void)sendJoinRequest {
-    // منع إرسال إشارة الانضمام للخادم
+%hook RaveRoom
+- (void)updateParticipants {
+    // منع تحديث قائمتك لكي لا يراك النظام
+    return;
 }
 %end
