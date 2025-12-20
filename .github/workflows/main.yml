@@ -1,4 +1,4 @@
-name: Build Rave Ghost M4 FINAL SUCCESS
+name: Build Rave Ghost M4 FINAL
 on: [push, pull_request]
 
 jobs:
@@ -8,30 +8,33 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install All-In-One (Fixed)
+      - name: Force Setup Theos
         run: |
-          # تثبيت المحرك الأساسي
+          # تثبيت الأدوات وضمان وجود المترجم
           sudo apt-get update
-          sudo apt-get install -y build-essential perl git curl libssl-dev tar clang llvm
+          sudo apt-get install -y build-essential perl git curl libssl-dev tar clang
           
-          # تحميل الثيوس والمترجم الخاص بـ iOS
-          git clone --recursive https://github.com/theos/theos.git $GITHUB_WORKSPACE/theos
+          # تثبيت الثيوس في مسار نظام ثابت
+          git clone --recursive https://github.com/theos/theos.git ~/theos
+          
+          # تحميل الـ SDK وتثبيته في المسار الافتراضي الذي يبحث عنه المترجم تلقائياً
           curl -L "https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz" -o sdk.tar.xz
-          mkdir -p $GITHUB_WORKSPACE/theos/sdks
-          tar -xf sdk.tar.xz -C $GITHUB_WORKSPACE/theos/sdks/
+          mkdir -p ~/theos/sdks
+          tar -xf sdk.tar.xz -C ~/theos/sdks/
           
-          # إعداد المسارات القسرية
-          echo "THEOS=$GITHUB_WORKSPACE/theos" >> $GITHUB_ENV
-          echo "PATH=$GITHUB_WORKSPACE/theos/bin:$PATH" >> $GITHUB_ENV
+          # تعيين المسارات بشكل دائم للسيرفر
+          echo "THEOS=~/theos" >> $GITHUB_ENV
+          echo "~/theos/bin" >> $GITHUB_PATH
 
-      - name: Build Tweak
+      - name: Create & Build (Final Attempt)
         run: |
-          export THEOS=$GITHUB_WORKSPACE/theos
+          export THEOS=~/theos
           
-          # إنشاء Makefile
+          # إنشاء Makefile مع توجيه المترجم للمسار الصحيح للـ SDK
           cat <<EOF > Makefile
           ARCHS = arm64 arm64e
           TARGET := iphone:clang:latest:14.5
+          SYSROOT = \$(THEOS)/sdks/iPhoneOS14.5.sdk
           include \$(THEOS)/makefiles/common.mk
           TWEAK_NAME = RaveGhost
           RaveGhost_FILES = Tweak.x
@@ -39,7 +42,7 @@ jobs:
           include \$(THEOS)/makefiles/tweak.mk
           EOF
 
-          # إنشاء Tweak.x
+          # إنشاء ملف التويك
           cat <<EOF > Tweak.x
           #import <UIKit/UIKit.h>
           %hook RavePlayerController
@@ -47,7 +50,8 @@ jobs:
           %end
           EOF
 
-          # أمر البناء المباشر مع تجاوز الأخطاء
+          # البناء النهائي مع مسح الذاكرة المؤقتة
+          make clean
           make package FINALPACKAGE=1
           
       - name: Upload
