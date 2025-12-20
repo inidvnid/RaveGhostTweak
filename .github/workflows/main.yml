@@ -4,7 +4,7 @@ on:
 
 jobs:
   build:
-    runs-on: macos-14
+    runs-on: macos-12
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -23,5 +23,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Telegram_Ghost_Ready
-          # هذا التعديل سيجعل GitHub يبحث في كل المجلدات ويجد ملفك بالتأكيد
           path: "**/*.dylib"
