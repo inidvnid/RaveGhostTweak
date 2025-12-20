@@ -1,4 +1,4 @@
-name: Build Rave Ghost M4
+name: Build Rave Ghost M4 Success
 on: [push, pull_request]
 
 jobs:
@@ -10,22 +10,53 @@ jobs:
 
       - name: Setup Environment
         run: |
-          # تحميل الثيوس في مجلد العمل لتجنب أخطاء الأذونات
           git clone --recursive https://github.com/theos/theos.git $GITHUB_WORKSPACE/theos
           curl -L https://github.com/theos/sdks/raw/master/iPhoneOS14.5.sdk.tar.xz -o sdk.tar.xz
           mkdir -p $GITHUB_WORKSPACE/theos/sdks
           tar -xf sdk.tar.xz -C $GITHUB_WORKSPACE/theos/sdks
           echo "THEOS=$GITHUB_WORKSPACE/theos" >> $GITHUB_ENV
 
-      - name: Hard Build
+      - name: Auto-Generate Files & Build
         run: |
           export THEOS=$GITHUB_WORKSPACE/theos
-          # إجبار السيرفر على استخدام المسار الجديد للبناء
-          $THEOS/bin/nic.pl --lib
-          make package FINALPACKAGE=1 ARCHS="arm64 arm64e"
+          
+          # 1. إنشاء ملف التحكم (control)
+          cat <<EOF > control
+          Package: com.yourname.raveghost
+          Name: RaveGhost
+          Depends: mobilesubstrate
+          Version: 1.0.0
+          Architecture: iphoneos-arm
+          Description: Ghost Mode for Rave
+          Maintainer: Developer
+          Author: Developer
+          Section: Tweaks
+          EOF
+
+          # 2. إنشاء ملف الـ Makefile بدقة متناهية
+          cat <<EOF > Makefile
+          ARCHS = arm64 arm64e
+          TARGET := iphone:clang:latest:14.5
+          include \$(THEOS)/makefiles/common.mk
+          TWEAK_NAME = RaveGhost
+          RaveGhost_FILES = Tweak.x
+          RaveGhost_CFLAGS = -fobjc-arc
+          include \$(THEOS)/makefiles/tweak.mk
+          EOF
+
+          # 3. إنشاء ملف التويك (Tweak.x)
+          cat <<EOF > Tweak.x
+          #import <UIKit/UIKit.h>
+          %hook RavePlayerController
+          - (bool)isGhostModeEnabled { return YES; }
+          %end
+          EOF
+
+          # 4. بناء المشروع
+          make package FINALPACKAGE=1
           
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: RaveGhost_M4_Final
+          name: RaveGhost_M4_Ready
           path: packages/*.deb
