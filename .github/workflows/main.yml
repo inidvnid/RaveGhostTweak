@@ -4,16 +4,20 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Setup Theos
-        uses: logan-arkin/setup-theos@v1.1.0
+        run: |
+          bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
+          echo "THEOS=~/theos" >> $GITHUB_ENV
+          echo "~/theos/bin" >> $GITHUB_PATH
 
       - name: Build Tweak for M2/M4/iPhone11
         run: |
+          export THEOS=~/theos
           make clean all
         
       - name: Upload Dylib Artifact
