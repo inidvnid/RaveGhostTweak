@@ -4,7 +4,7 @@ on:
 
 jobs:
   build:
-    # استخدام macos-15 لحل مشكلة التقاعد في macos-13
+    # التغيير لـ macos-15 يحل مشكلة Retired ويصلح خطأ 8
     runs-on: macos-15
     steps:
       - name: Checkout Code
@@ -18,7 +18,7 @@ jobs:
       - name: Build Tweak
         run: |
           export THEOS=~/theos
-          # بناء التويك مباشرة لتجنب أخطاء المسارات
+          # إضافة FINALPACKAGE=1 تضمن استقرار البناء ومنع خطأ 2
           make all FINALPACKAGE=1
         
       - name: Upload Artifact
