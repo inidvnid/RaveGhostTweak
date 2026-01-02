@@ -1,9 +1,9 @@
 Package: com.yourname.raveghost
-Name: RaveGhost
+Name: RaveGhostMode
 Depends: mobilesubstrate
-Version: 0.0.1
-Architecture: iphoneos-arm64
-Description: Ghost mode for Rave app
-Maintainer: YourName
+Version: 1.0.0
+Architecture: iphoneos-arm
+Description: إخفاء الحساب عند دخول غرف Rave
 Author: YourName
 Section: Tweaks
+
